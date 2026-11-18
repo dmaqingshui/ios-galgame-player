@@ -1,0 +1,58 @@
+name: Build unsigned IPA
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build MyGalPlayer (unsigned)
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Read version
+        id: version
+        run: echo "version=$(tr -d '[:space:]' < VERSION)" >> "$GITHUB_OUTPUT"
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Build Release (iphoneos, no signing)
+        run: |
+          xcodebuild \
+            -project MyGalPlayer.xcodeproj \
+            -scheme MyGalPlayer \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build/DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build
+
+      - name: Package unsigned IPA
+        run: |
+          APP_PATH="build/DerivedData/Build/Products/Release-iphoneos/MyGalPlayer.app"
+          if [ ! -d "$APP_PATH" ]; then
+            echo "Build product not found at $APP_PATH" >&2
+            find build/DerivedData/Build/Products -maxdepth 2 -name "*.app" || true
+            exit 1
+          fi
+          rm -rf Payload
+          mkdir -p Payload
+          cp -R "$APP_PATH" Payload/
+          zip -qry "MyGalPlayer-unsigned-${{ steps.version.outputs.version }}.ipa" Payload
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MyGalPlayer-unsigned-${{ steps.version.outputs.version }}
+          path: MyGalPlayer-unsigned-${{ steps.version.outputs.version }}.ipa
+          if-no-files-found: error
