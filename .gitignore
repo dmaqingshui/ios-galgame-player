@@ -1,0 +1,26 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Xcode generated project (由 XcodeGen 在 CI 中生成，不入库)
+MyGalPlayer.xcodeproj/
+*.xcworkspace
+
+# Xcode build output
+DerivedData/
+build/
+*.ipa
+*.app
+
+# Xcode user data
+xcuserdata/
+*.xcuserstate
+*.xccheckout
+
+# Swift Package Manager
+.build/
+Package.resolved
+
+# Misc
+*.hmap
